@@ -1,6 +1,6 @@
 <?php
 
-require_once 'config/config.php';
+require_once 'config/_config.php';
 require_once 'config/autoload.php';
 
 // On récupère l'action demandée par l'utilisateur.
@@ -74,6 +74,10 @@ try {
             $adminController->deleteArticle();
             break;
 
+        case 'dashboard':
+            $adminController = new AdminController();
+            $adminController->showDashboard();
+            break;
         default:
             throw new Exception("La page demandée n'existe pas.");
     }
