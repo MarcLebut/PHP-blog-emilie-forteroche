@@ -5,21 +5,50 @@
  */
 class ArticleManager extends AbstractEntityManager 
 {
+    public function getCountComments($article_id):int
+    {
+        $sql="";
+        $result =$this->db->query($sql);
+        $CountComment= 0;
+
+        return $CountComment;
+    }
+
     /**
-     * Récupère tous les articles.
-     * @return array : un tableau d'objets Article.
+     * Incrémente le compteur de vues d’un article.
+     * @param int $articleId
+     * @return void
      */
+    public function incrementViews(int $articleId): void
+    {
+        $sql = "UPDATE article SET views = views + 1 WHERE id = :id";
+        $this->db->query($sql, ['id' => $articleId]);
+    }
+    /**
+    * Récupère tous les articles.
+    * @return array<Article> : un tableau d'objets Article.
+    */
     public function getAllArticles() : array
     {
         $sql = "SELECT * FROM article";
         $result = $this->db->query($sql);
-        $articles = [];
 
-        while ($article = $result->fetch()) {
-            $articles[] = new Article($article);
+        $articles = [];
+        while ($row = $result->fetch()) {
+            // Hydratation de base (titre, contenu, date, etc.)
+            $article = new Article($row);
+
+            // IMPORTANT : on alimente la propriété utilisée par la vue
+            // (la vue appelle getCountViews(), donc on set explicitement depuis la colonne SQL 'views')
+            if (method_exists($article, 'setCountViews')) {
+                $article->setCountViews((int)($row['views'] ?? 0));
+            }
+
+            $articles[] = $article;
         }
-        return $articles;
-    }
+
+    return $articles;
+}
     
     /**
      * Récupère un article par son id.

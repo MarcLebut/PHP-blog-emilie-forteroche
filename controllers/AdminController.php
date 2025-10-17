@@ -5,6 +5,28 @@
  
 class AdminController {
 
+    public function dashboard(): void
+    {
+        // 1) Récupérer les articles (méthode existante de ton ArticleManager)
+        $articleManager = new ArticleManager(); // ou new ArticleManager($this->db) selon ta signature
+        // Choisis la bonne méthode selon ton code existant :
+        // $articles = $articleManager->findAll();
+        // ou
+        // $articles = $articleManager->getAll();
+        // ou
+        $articles = $articleManager->getAllArticles(); // <- si c’est le nom dans ton projet
+
+        // 2) Pour chaque article, calculer et injecter le nombre de commentaires
+        $commentManager = new CommentManager();
+        foreach ($articles as $article) {
+            $count = $commentManager->countByArticleId($article->getId());
+            $article->setCountComments($count);
+        }
+
+        // 3) Afficher la vue (affichage uniquement)
+        require __DIR__ . '/dashboard.php';
+    }
+
     /**
      * Affiche la page de gestion des articles.
      * @return void
@@ -31,19 +53,28 @@ class AdminController {
      */
     public function showDashboard() : void
     {
-        // On vérifie que l'utilisateur est connecté.
-        $this->checkIfUserIsConnected();
+    // 1) Sécurité : on s'assure que l'utilisateur est connecté
+    $this->checkIfUserIsConnected();
 
-        // On récupère les articles.
-        $articleManager = new ArticleManager();
-        $articles = $articleManager->getAllArticles();
+    // 2) Récupération des articles (objets Article)
+    $articleManager = new ArticleManager();
+    $articles = $articleManager->getAllArticles(); // méthode existante dans ton projet
 
-        // On affiche la page d'administration.
-        $view = new View("Tableau de bord");
-        $view->render("dashboard", [
-            'articles' => $articles
-        ]);
+    // 3) Hydratation du nombre de commentaires pour chaque article
+    //(POO : aucune logique dans la vue)
+    $commentManager = new CommentManager();
+    foreach ($articles as $article) {
+        // On suppose que l'entité Article a bien un getId()
+        $count = $commentManager->countByArticleId($article->getId());
+        $article->setCountComments($count);
     }
+
+    // 4) Rendu de la vue (affichage pur)
+    $view = new View("Tableau de bord");
+    $view->render("dashboard", [
+        'articles' => $articles
+    ]);
+}
 
     /**
      * Vérifie que l'utilisateur est connecté.
