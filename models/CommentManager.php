@@ -29,7 +29,7 @@ class CommentManager extends AbstractEntityManager
      */
     public function countByArticleId(int $articleId): int
     {
-        // version harmonisée avec le reste de ta classe :
+        // version harmonisée avec le reste de la classe :
         $sql = 'SELECT COUNT(*) FROM comment WHERE id_article = :id';
         $result = $this->db->query($sql, ['id' => $articleId]);
         return (int) $result->fetchColumn();

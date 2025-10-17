@@ -28,7 +28,7 @@ class ArticleController
         $commentManager = new CommentManager();
         $comments = $commentManager->getAllCommentsByArticleId($id);
 
-        $view = new View("Détail de l’article");
+        $view = new View("Détail de l'article");
         $view->render("detailArticle", [
             'article' => $article,
             'comments' => $comments

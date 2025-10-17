@@ -11,8 +11,9 @@ class Article extends AbstractEntity
     private string $content = "";
     private ?DateTime $dateCreation = null;
     private ?DateTime $dateUpdate = null;
-
+    private int $countViews = 0;
     private int $countComments = 0;
+
     public function getCountComments(): int
     {
         return $this->countComments;
@@ -21,9 +22,6 @@ class Article extends AbstractEntity
     {
         $this->countComments = max(0, $count);
     }
-
-    /** @var int Nombre de vues (colonne article.views) */
-    private int $countViews = 0;
 
     /** Retourne le nombre de vues */
     public function getCountViews(): int

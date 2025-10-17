@@ -1,37 +1,63 @@
-<?php 
+<?php
 /**
  * Contrôleur de la partie admin.
  */
- 
-class AdminController {
 
-    public function dashboard(): void
-    {
-        // 1) Récupérer les articles (méthode existante de ton ArticleManager)
-        $articleManager = new ArticleManager(); // ou new ArticleManager($this->db) selon ta signature
-        // Choisis la bonne méthode selon ton code existant :
-        // $articles = $articleManager->findAll();
-        // ou
-        // $articles = $articleManager->getAll();
-        // ou
-        $articles = $articleManager->getAllArticles(); // <- si c’est le nom dans ton projet
+class AdminController
+{
 
-        // 2) Pour chaque article, calculer et injecter le nombre de commentaires
-        $commentManager = new CommentManager();
-        foreach ($articles as $article) {
-            $count = $commentManager->countByArticleId($article->getId());
-            $article->setCountComments($count);
-        }
+    public function index(): void
+{
+    // ⚠️ Si ton manager nécessite PDO, passe-le ici (ex: $pdo injecté ailleurs)
+    $articleManager = new ArticleManager();
 
-        // 3) Afficher la vue (affichage uniquement)
-        require __DIR__ . '/dashboard.php';
+    // 1) Colonnes triables : clé (vue) -> colonne SQL (modèle)
+    $COLS = [
+        'title'    => ['label' => 'Titre',        'sql' => 'title'],
+        'views'    => ['label' => 'Vues',         'sql' => 'views'],
+        'comments' => ['label' => 'Commentaires', 'sql' => 'comments'],
+        'date'     => ['label' => 'Publication',  'sql' => 'date_creation'], // <-- important
+    ];
+
+    // 2) Lecture + sécurisation
+    $sortKey = $_GET['sort']  ?? 'date';
+    $order   = $_GET['order'] ?? 'desc';
+    $sortKey = array_key_exists($sortKey, $COLS) ? $sortKey : 'date';
+    $order   = strtolower($order) === 'asc' ? 'asc' : 'desc';
+
+    // 3) Données triées
+    $articles = $articleManager->findAllSorted($sortKey, $order);
+
+    // 4) En-têtes (toggle + flèche)
+    $mkUrl = static function (string $k, string $o): string {
+        return 'index.php?action=adminDashboard&sort=' . urlencode($k) . '&order=' . urlencode($o);
+    };
+
+    $headers = [];
+    foreach ($COLS as $key => $meta) {
+        $isCurrent = ($key === $sortKey);
+        $nextOrder = ($isCurrent && $order === 'asc') ? 'desc' : 'asc';
+        $arrow     = $isCurrent ? ($order === 'asc' ? ' ▲' : ' ▼') : '';
+        $headers[] = [
+            'label' => $meta['label'] . $arrow,
+            'href'  => $mkUrl($key, $nextOrder),
+        ];
     }
+
+    // 5) Vue
+    $view = new View("Tableau de bord");
+    $view->render("dashboard", [
+        'articles' => $articles,
+        'headers'  => $headers,   // <-- passe les entêtes à la vue
+    ]);
+}
+
 
     /**
      * Affiche la page de gestion des articles.
      * @return void
      */
-    public function showAdmin() : void
+    public function showAdmin(): void
     {
         // On vérifie que l'utilisateur est connecté.
         $this->checkIfUserIsConnected();
@@ -46,41 +72,43 @@ class AdminController {
             'articles' => $articles
         ]);
     }
-    
+
     /**
      * Affiche la page d'administration (tableau de bord).
      * @return void
      */
-    public function showDashboard() : void
+    public function showDashboard(): void
     {
-    // 1) Sécurité : on s'assure que l'utilisateur est connecté
-    $this->checkIfUserIsConnected();
+        // 1) Sécurité : on s'assure que l'utilisateur est connecté
+        $this->checkIfUserIsConnected();
 
-    // 2) Récupération des articles (objets Article)
-    $articleManager = new ArticleManager();
-    $articles = $articleManager->getAllArticles(); // méthode existante dans ton projet
+        // 2) Récupération des articles (objets Article)
+        $articleManager = new ArticleManager();
+        $articles = $articleManager->getAllArticles(); // méthode existante dans ton projet
 
-    // 3) Hydratation du nombre de commentaires pour chaque article
-    //(POO : aucune logique dans la vue)
-    $commentManager = new CommentManager();
-    foreach ($articles as $article) {
-        // On suppose que l'entité Article a bien un getId()
-        $count = $commentManager->countByArticleId($article->getId());
-        $article->setCountComments($count);
+        // 3) Hydratation du nombre de commentaires pour chaque article
+        //(POO : aucune logique dans la vue)
+        $commentManager = new CommentManager();
+        foreach ($articles as $article) {
+            // On suppose que l'entité Article a bien un getId()
+            $count = $commentManager->countByArticleId($article->getId());
+            $article->setCountComments($count);
+
+
+        }
+
+        // 4) Rendu de la vue (affichage pur)
+        $view = new View("Tableau de bord");
+        $view->render("dashboard", [
+            'articles' => $articles
+        ]);
     }
-
-    // 4) Rendu de la vue (affichage pur)
-    $view = new View("Tableau de bord");
-    $view->render("dashboard", [
-        'articles' => $articles
-    ]);
-}
 
     /**
      * Vérifie que l'utilisateur est connecté.
      * @return void
      */
-    private function checkIfUserIsConnected() : void
+    private function checkIfUserIsConnected(): void
     {
         // On vérifie que l'utilisateur est connecté.
         if (!isset($_SESSION['user'])) {
@@ -92,7 +120,7 @@ class AdminController {
      * Affichage du formulaire de connexion.
      * @return void
      */
-    public function displayConnectionForm() : void 
+    public function displayConnectionForm(): void
     {
         $view = new View("Connexion");
         $view->render("connectionForm");
@@ -102,7 +130,7 @@ class AdminController {
      * Connexion de l'utilisateur.
      * @return void
      */
-    public function connectUser() : void 
+    public function connectUser(): void
     {
         // On récupère les données du formulaire.
         $login = Utils::request("login");
@@ -138,7 +166,7 @@ class AdminController {
      * Déconnexion de l'utilisateur.
      * @return void
      */
-    public function disconnectUser() : void 
+    public function disconnectUser(): void
     {
         // On déconnecte l'utilisateur.
         unset($_SESSION['user']);
@@ -151,7 +179,7 @@ class AdminController {
      * Affichage du formulaire d'ajout d'un article.
      * @return void
      */
-    public function showUpdateArticleForm() : void 
+    public function showUpdateArticleForm(): void
     {
         $this->checkIfUserIsConnected();
 
@@ -179,7 +207,7 @@ class AdminController {
      * On sait si un article est ajouté car l'id vaut -1.
      * @return void
      */
-    public function updateArticle() : void 
+    public function updateArticle(): void
     {
         $this->checkIfUserIsConnected();
 
@@ -214,7 +242,7 @@ class AdminController {
      * Suppression d'un article.
      * @return void
      */
-    public function deleteArticle() : void
+    public function deleteArticle(): void
     {
         $this->checkIfUserIsConnected();
 
@@ -223,7 +251,7 @@ class AdminController {
         // On supprime l'article.
         $articleManager = new ArticleManager();
         $articleManager->deleteArticle($id);
-       
+
         // On redirige vers la page d'administration.
         Utils::redirect("admin");
     }
