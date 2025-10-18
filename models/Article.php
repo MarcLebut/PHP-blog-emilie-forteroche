@@ -80,6 +80,20 @@ class Article extends AbstractEntity
         $this->content = $content;
     }
 
+    // --- Commentaires liés à l'article ---
+    private array $comments = []; // Tableau d'objets Comment
+
+    public function getComments(): array
+    {
+        return $this->comments;
+    }
+
+    public function setComments(array $comments): self
+    {
+        $this->comments = $comments;
+        return $this;
+    }
+
 
     /**
      * Getter pour le contenu.

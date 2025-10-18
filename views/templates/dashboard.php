@@ -21,7 +21,7 @@ $active = function (string $col, string $order) use ($currentSort, $currentOrder
             <a class="sort-btn <?= $active('views', 'desc') ?>" href="index.php?action=adminDashboard&sort=views&order=desc" title="Trier Vues décroissant">▼</a>
         </div>
 
-        <div class="title">
+        <div class="title centercontent">
             <h3>Commentaire</h3>
             <a class="sort-btn <?= $active('comments', 'asc') ?>" href="index.php?action=adminDashboard&sort=comments&order=asc" title="Trier Commentaires croissant">▲</a>
             <a class="sort-btn <?= $active('comments', 'desc') ?>" href="index.php?action=adminDashboard&sort=comments&order=desc" title="Trier Commentaires décroissant">▼</a>
@@ -37,7 +37,13 @@ $active = function (string $col, string $order) use ($currentSort, $currentOrder
         <div class="articleLine">
             <div class="title"><?= htmlspecialchars($article->getTitle(), ENT_QUOTES, 'UTF-8') ?></div>
             <div class="title"><?= (int) $article->getCountViews() ?></div>
-            <div class="title"><?= (int) $article->getCountComments() ?></div>
+            <div class="title">
+                <a href="index.php?action=showComments&id=<?= urlencode($article->getId()) ?>" 
+                class="text-decoration-none" 
+                title="Voir tous les commentaires de cet article">
+                    <?= (int) $article->getCountComments() ?>
+                </a>
+            </div>
             <div class="content footer">
                 <span class="info"><?= ucfirst(Utils::convertDateToFrenchFormat($article->getDateCreation())) ?></span>
             </div>

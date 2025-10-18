@@ -7,50 +7,50 @@ class AdminController
 {
 
     public function index(): void
-{
-    // ⚠️ Si ton manager nécessite PDO, passe-le ici (ex: $pdo injecté ailleurs)
-    $articleManager = new ArticleManager();
+    {
+        // ⚠️ Si ton manager nécessite PDO, passe-le ici (ex: $pdo injecté ailleurs)
+        $articleManager = new ArticleManager();
 
-    // 1) Colonnes triables : clé (vue) -> colonne SQL (modèle)
-    $COLS = [
-        'title'    => ['label' => 'Titre',        'sql' => 'title'],
-        'views'    => ['label' => 'Vues',         'sql' => 'views'],
-        'comments' => ['label' => 'Commentaires', 'sql' => 'comments'],
-        'date'     => ['label' => 'Publication',  'sql' => 'date_creation'], // <-- important
-    ];
-
-    // 2) Lecture + sécurisation
-    $sortKey = $_GET['sort']  ?? 'date';
-    $order   = $_GET['order'] ?? 'desc';
-    $sortKey = array_key_exists($sortKey, $COLS) ? $sortKey : 'date';
-    $order   = strtolower($order) === 'asc' ? 'asc' : 'desc';
-
-    // 3) Données triées
-    $articles = $articleManager->findAllSorted($sortKey, $order);
-
-    // 4) En-têtes (toggle + flèche)
-    $mkUrl = static function (string $k, string $o): string {
-        return 'index.php?action=adminDashboard&sort=' . urlencode($k) . '&order=' . urlencode($o);
-    };
-
-    $headers = [];
-    foreach ($COLS as $key => $meta) {
-        $isCurrent = ($key === $sortKey);
-        $nextOrder = ($isCurrent && $order === 'asc') ? 'desc' : 'asc';
-        $arrow     = $isCurrent ? ($order === 'asc' ? ' ▲' : ' ▼') : '';
-        $headers[] = [
-            'label' => $meta['label'] . $arrow,
-            'href'  => $mkUrl($key, $nextOrder),
+        // 1) Colonnes triables : clé (vue) -> colonne SQL (modèle)
+        $COLS = [
+            'title' => ['label' => 'Titre', 'sql' => 'title'],
+            'views' => ['label' => 'Vues', 'sql' => 'views'],
+            'comments' => ['label' => 'Commentaires', 'sql' => 'comments'],
+            'date' => ['label' => 'Publication', 'sql' => 'date_creation'], // <-- important
         ];
-    }
 
-    // 5) Vue
-    $view = new View("Tableau de bord");
-    $view->render("dashboard", [
-        'articles' => $articles,
-        'headers'  => $headers,   // <-- passe les entêtes à la vue
-    ]);
-}
+        // 2) Lecture + sécurisation
+        $sortKey = $_GET['sort'] ?? 'date';
+        $order = $_GET['order'] ?? 'desc';
+        $sortKey = array_key_exists($sortKey, $COLS) ? $sortKey : 'date';
+        $order = strtolower($order) === 'asc' ? 'asc' : 'desc';
+
+        // 3) Données triées
+        $articles = $articleManager->findAllSorted($sortKey, $order);
+
+        // 4) En-têtes (toggle + flèche)
+        $mkUrl = static function (string $k, string $o): string {
+            return 'index.php?action=adminDashboard&sort=' . urlencode($k) . '&order=' . urlencode($o);
+        };
+
+        $headers = [];
+        foreach ($COLS as $key => $meta) {
+            $isCurrent = ($key === $sortKey);
+            $nextOrder = ($isCurrent && $order === 'asc') ? 'desc' : 'asc';
+            $arrow = $isCurrent ? ($order === 'asc' ? ' ▲' : ' ▼') : '';
+            $headers[] = [
+                'label' => $meta['label'] . $arrow,
+                'href' => $mkUrl($key, $nextOrder),
+            ];
+        }
+
+        // 5) Vue
+        $view = new View("Tableau de bord");
+        $view->render("dashboard", [
+            'articles' => $articles,
+            'headers' => $headers,   // <-- passe les entêtes à la vue
+        ]);
+    }
 
 
     /**
@@ -77,23 +77,27 @@ class AdminController
      * Affiche la page d'administration (tableau de bord).
      * @return void
      */
-    public function showDashboard(): void
+
+    /*public function showDashboard(): void
     {
         // 1) Sécurité : on s'assure que l'utilisateur est connecté
         $this->checkIfUserIsConnected();
 
         // 2) Récupération des articles (objets Article)
         $articleManager = new ArticleManager();
-        $articles = $articleManager->getAllArticles(); // méthode existante dans ton projet
+        $commentManager = new CommentManager();
+        $articles = $articleManager->getAllArticles();
+
+        $commentsByArticle = [];
+
 
         // 3) Hydratation du nombre de commentaires pour chaque article
         //(POO : aucune logique dans la vue)
-        $commentManager = new CommentManager();
         foreach ($articles as $article) {
-            // On suppose que l'entité Article a bien un getId()
+            // Article a bien un getId()
             $count = $commentManager->countByArticleId($article->getId());
-            $article->setCountComments($count);
 
+            $article->setCountComments($count);
 
         }
 
@@ -102,7 +106,94 @@ class AdminController
         $view->render("dashboard", [
             'articles' => $articles
         ]);
+    }*/
+    public function showDashboard(): void
+    {
+        // 1) Sécurité : on s'assure que l'utilisateur est connecté
+        $this->checkIfUserIsConnected();
+
+        // 2) Managers
+        $articleManager = new ArticleManager();
+        $commentManager = new CommentManager();
+
+        // 3) Récupération des articles (objets Article)
+        $articles = $articleManager->getAllArticles();
+
+        // Option de secours si l'entité Article ne possède pas setComments()
+        $commentsByArticle = [];
+
+        // 4) Hydratation : nb de commentaires + liste complète
+        foreach ($articles as $article) {
+            $articleId = (int) $article->getId();
+
+            // a) Nombre de commentaires
+            $count = $commentManager->countByArticleId($articleId);
+            $article->setCountComments($count);
+
+            // b) Liste complète des commentaires de l'article
+            $comments = $commentManager->findByArticleId($articleId);
+
+            // Si votre entité Article a un mutateur setComments(), on l'utilise :
+            if (method_exists($article, 'setComments')) {
+                $article->setComments($comments);
+            } else {
+                // Sinon on prépare une structure à passer à la vue
+                $commentsByArticle[$articleId] = $comments;
+            }
+        }
+
+        // 5) Rendu de la vue (affichage pur)
+        $view = new View("Tableau de bord");
+        $view->render("dashboard", [
+            'articles' => $articles,
+            // Utile seulement si Article n'a pas setComments()
+            'commentsByArticle' => $commentsByArticle
+        ]);
     }
+    public function showComments(): void
+    {
+        // 1) Sécurité
+        $this->checkIfUserIsConnected();
+
+        // 2) Récupération de l'id article depuis la requête
+        $articleId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+        if ($articleId <= 0) {
+            // Id manquant ou invalide -> redirection ou message propre
+            // À adapter selon ton routeur/flash
+            throw new \InvalidArgumentException("Identifiant d'article invalide.");
+        }
+
+        // 3) Managers
+        $articleManager = new ArticleManager();
+        $commentManager = new CommentManager();
+
+        // 4) Charger l'article demandé
+        $article = $articleManager->getArticleById($articleId);
+        if (!$article) {
+            throw new \RuntimeException("Article introuvable (id: {$articleId}).");
+        }
+
+        // 5) Charger uniquement les commentaires de CET article
+        $comments = $commentManager->findByArticleId($articleId);
+
+        // (Optionnel) hydrater dans l'entité si tu as setComments()
+        if (method_exists($article, 'setComments')) {
+            $article->setComments($comments);
+        }
+        // (Optionnel) hydrater le count si tu l’affiches dans la vue
+        if (method_exists($article, 'setCountComments')) {
+            $article->setCountComments($commentManager->countByArticleId($articleId));
+        }
+
+        // 6) Rendu : on passe l'article ciblé et ses commentaires
+        $view = new View("Commentaires de l'article");
+        $view->render("comments", [
+            'article'  => $article,
+            'comments' => $comments,
+        ]);
+    }
+
+
 
     /**
      * Vérifie que l'utilisateur est connecté.

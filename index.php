@@ -78,13 +78,19 @@ try {
             $adminController = new AdminController();
             $adminController->showDashboard();
             break;
+        
+        case 'showComments':
+            $adminController = new AdminController();
+            $adminController->showComments();
+            break;
 
         case 'adminDashboard':
         $adminController = new AdminController();
         $adminController->index();
         break;
+
         default:
-            throw new Exception("La page demandée n'existe pas.");
+        throw new Exception("La page demandée n'existe pas.");
     }
 } catch (Exception $e) {
     // En cas d'erreur, on affiche la page d'erreur.

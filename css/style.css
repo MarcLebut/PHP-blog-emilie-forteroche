@@ -315,6 +315,7 @@ a.info {
 
 .articleLine {
     display: flex; 
+    text-align: center;
 }
 
 .articleLine div {
@@ -324,9 +325,14 @@ a.info {
 
 .articleLine .title {
     font-weight: bold;
-    min-width: 200px;
-    width: 200px;
+    min-width: 220px;
+    width: 220px;
     
+    
+    
+}
+.centercontent{
+    justify-content: center;
 }
 
 .articleLine .content {
@@ -354,7 +360,7 @@ footer {
     background-color: var(--headerColor);
 }
 
-/* Mini styles pour rendre les flèches visibles et alignées avec ton CSS existant */
+/* Mini styles pour rendre les flèches visibles et alignées */
 .sort-btn{
     display:inline-flex;
     align-items:center;
