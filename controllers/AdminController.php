@@ -8,14 +8,14 @@ class AdminController
 
     public function index(): void
     {
-        // ⚠️ Si ton manager nécessite PDO, passe-le ici (ex: $pdo injecté ailleurs)
+        $commentManager = new CommentManager();
         $articleManager = new ArticleManager();
 
         // 1) Colonnes triables : clé (vue) -> colonne SQL (modèle)
         $COLS = [
             'title' => ['label' => 'Titre', 'sql' => 'title'],
             'views' => ['label' => 'Vues', 'sql' => 'views'],
-            'comments' => ['label' => 'Commentaires', 'sql' => 'comments'],
+            'comments' => ['label' => 'Commentaires', 'sql' => 'countComments'],
             'date' => ['label' => 'Publication', 'sql' => 'date_creation'], // <-- important
         ];
 
@@ -23,21 +23,36 @@ class AdminController
         $sortKey = $_GET['sort'] ?? 'date';
         $order = $_GET['order'] ?? 'desc';
         $sortKey = array_key_exists($sortKey, $COLS) ? $sortKey : 'date';
-        $order = strtolower($order) === 'asc' ? 'asc' : 'desc';
+        $order = strtolower($order) === 'asc' ? 'ASC' : 'DESC';
 
         // 3) Données triées
-        $articles = $articleManager->findAllSorted($sortKey, $order);
+        $articles = $articleManager->findAllSorted($COLS[$sortKey]['sql'], $order);
+
+        foreach ($articles as $article) {
+            // Si la méthode existe et que la valeur semble manquante, on calcule
+            if (method_exists($article, 'getCountComments')) {
+                $current = (int) $article->getCountComments();
+                if ($current === 0) {
+                    // On peut vérifier s'il y a potentiellement des commentaires
+                    // pour ne pas faire de requête inutile — ici on fait simple :
+                    $count = (int) $commentManager->countByArticleId($article->getId());
+                    if ($count !== $current && method_exists($article, 'setCountComments')) {
+                        $article->setCountComments($count);
+                    }
+                }
+            }
+        }
 
         // 4) En-têtes (toggle + flèche)
         $mkUrl = static function (string $k, string $o): string {
-            return 'index.php?action=adminDashboard&sort=' . urlencode($k) . '&order=' . urlencode($o);
+            return 'index.php?action=dashboard&sort=' . urlencode($k) . '&order=' . urlencode($o);
         };
 
         $headers = [];
         foreach ($COLS as $key => $meta) {
-            $isCurrent = ($key === $sortKey);
-            $nextOrder = ($isCurrent && $order === 'asc') ? 'desc' : 'asc';
-            $arrow = $isCurrent ? ($order === 'asc' ? ' ▲' : ' ▼') : '';
+            $isCurrent = $key === $sortKey;
+            $nextOrder = ($isCurrent && $order === 'ASC') ? 'desc' : 'asc';
+            $arrow     = $isCurrent ? ($order === 'ASC' ? ' ▲' : ' ▼') : '';
             $headers[] = [
                 'label' => $meta['label'] . $arrow,
                 'href' => $mkUrl($key, $nextOrder),
@@ -78,7 +93,7 @@ class AdminController
      * @return void
      */
 
-    /*public function showDashboard(): void
+    public function showDashboard(): void
     {
         // 1) Sécurité : on s'assure que l'utilisateur est connecté
         $this->checkIfUserIsConnected();
@@ -104,52 +119,10 @@ class AdminController
         // 4) Rendu de la vue (affichage pur)
         $view = new View("Tableau de bord");
         $view->render("dashboard", [
-            'articles' => $articles
-        ]);
-    }*/
-    public function showDashboard(): void
-    {
-        // 1) Sécurité : on s'assure que l'utilisateur est connecté
-        $this->checkIfUserIsConnected();
-
-        // 2) Managers
-        $articleManager = new ArticleManager();
-        $commentManager = new CommentManager();
-
-        // 3) Récupération des articles (objets Article)
-        $articles = $articleManager->getAllArticles();
-
-        // Option de secours si l'entité Article ne possède pas setComments()
-        $commentsByArticle = [];
-
-        // 4) Hydratation : nb de commentaires + liste complète
-        foreach ($articles as $article) {
-            $articleId = (int) $article->getId();
-
-            // a) Nombre de commentaires
-            $count = $commentManager->countByArticleId($articleId);
-            $article->setCountComments($count);
-
-            // b) Liste complète des commentaires de l'article
-            $comments = $commentManager->findByArticleId($articleId);
-
-            // Si votre entité Article a un mutateur setComments(), on l'utilise :
-            if (method_exists($article, 'setComments')) {
-                $article->setComments($comments);
-            } else {
-                // Sinon on prépare une structure à passer à la vue
-                $commentsByArticle[$articleId] = $comments;
-            }
-        }
-
-        // 5) Rendu de la vue (affichage pur)
-        $view = new View("Tableau de bord");
-        $view->render("dashboard", [
             'articles' => $articles,
-            // Utile seulement si Article n'a pas setComments()
-            'commentsByArticle' => $commentsByArticle
         ]);
     }
+    
     public function showComments(): void
     {
         // 1) Sécurité
@@ -159,7 +132,7 @@ class AdminController
         $articleId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
         if ($articleId <= 0) {
             // Id manquant ou invalide -> redirection ou message propre
-            // À adapter selon ton routeur/flash
+           
             throw new \InvalidArgumentException("Identifiant d'article invalide.");
         }
 
@@ -346,4 +319,35 @@ class AdminController
         // On redirige vers la page d'administration.
         Utils::redirect("admin");
     }
+
+    /**
+     * Suppression d'un commentaire.
+     * @return void
+     */
+    public function deleteComment(): void
+{
+    $this->checkIfUserIsConnected();
+
+    $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+    if ($id <= 0) {
+        // TODO: flash message "ID invalide"
+        header('Location: index.php?action=showcomments');
+        exit;
+    }
+
+    $commentManager = new CommentManager();
+    $comment = $commentManager->getCommentById($id);
+
+    if ($comment === null) {
+        // TODO: flash message "Commentaire introuvable"
+        header('Location: index.php?action=showComments');
+        exit;
+    }
+
+    $ok = $commentManager->deleteComment($comment);
+
+    // TODO: flash message ($ok ? "Suppression réussie" : "Échec suppression")
+    header('Location: index.php?action=showcomments');
+    exit;
+}
 }

@@ -73,21 +73,19 @@ try {
             $adminController = new AdminController();
             $adminController->deleteArticle();
             break;
-
+        case 'deleteComment':
+            $adminController = new AdminController();
+            $adminController->deleteComment();
+            break;
         case 'dashboard':
             $adminController = new AdminController();
-            $adminController->showDashboard();
+            $adminController->index();
             break;
         
         case 'showComments':
             $adminController = new AdminController();
             $adminController->showComments();
             break;
-
-        case 'adminDashboard':
-        $adminController = new AdminController();
-        $adminController->index();
-        break;
 
         default:
         throw new Exception("La page demandée n'existe pas.");

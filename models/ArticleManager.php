@@ -27,7 +27,7 @@ class ArticleManager extends AbstractEntityManager
         $order = (strtolower($order) === 'asc') ? 'ASC' : 'DESC';
 
         // 2) SQL : compter les commentaires par article, puis LEFT JOIN
-        $sql = "SELECT a.*, COALESCE(c.cnt, 0) AS comments FROM article a LEFT JOIN (  SELECT id_article, COUNT(*) AS cnt FROM comment GROUP BY id_article) c ON c.id_article = a.id ORDER BY {$sortColumn} {$order}  ";
+        $sql = "SELECT a.*, COALESCE(c.cnt, 0) AS countComments FROM article a LEFT JOIN (  SELECT id_article, COUNT(*) AS cnt FROM comment GROUP BY id_article) c ON c.id_article = a.id ORDER BY {$sortColumn} {$order}  ";
 
         $result = $this->db->query($sql);
 
