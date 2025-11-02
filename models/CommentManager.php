@@ -105,5 +105,5 @@ class CommentManager extends AbstractEntityManager
         $comments[] = $comment;
     }
     return $comments;
-}
+    }
 }

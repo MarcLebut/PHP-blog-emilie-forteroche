@@ -60,6 +60,7 @@ class ArticleManager extends AbstractEntityManager
         $sql = "UPDATE article SET views = views + 1 WHERE id = :id";
         $this->db->query($sql, ['id' => $articleId]);
     }
+    
     /**
      * Récupère tous les articles.
      * @return array<Article> : un tableau d'objets Article.

@@ -8,6 +8,10 @@ class AdminController
 
     public function index(): void
     {
+
+        // On vérifie que l'utilisateur est connecté.
+        $this->checkIfUserIsConnected();
+
         $commentManager = new CommentManager();
         $articleManager = new ArticleManager();
 
@@ -20,8 +24,8 @@ class AdminController
         ];
 
         // 2) Lecture + sécurisation
-        $sortKey = $_GET['sort'] ?? 'date';
-        $order = $_GET['order'] ?? 'desc';
+        $sortKey = Utils::request('sort') ?? 'date';
+        $order = Utils::request('order') ?? 'desc';
         $sortKey = array_key_exists($sortKey, $COLS) ? $sortKey : 'date';
         $order = strtolower($order) === 'asc' ? 'ASC' : 'DESC';
 
@@ -52,7 +56,7 @@ class AdminController
         foreach ($COLS as $key => $meta) {
             $isCurrent = $key === $sortKey;
             $nextOrder = ($isCurrent && $order === 'ASC') ? 'desc' : 'asc';
-            $arrow     = $isCurrent ? ($order === 'ASC' ? ' ▲' : ' ▼') : '';
+            $arrow = $isCurrent ? ($order === 'ASC' ? ' ▲' : ' ▼') : '';
             $headers[] = [
                 'label' => $meta['label'] . $arrow,
                 'href' => $mkUrl($key, $nextOrder),
@@ -67,32 +71,20 @@ class AdminController
         ]);
     }
 
-
-    /**
-     * Affiche la page de gestion des articles.
-     * @return void
-     */
-    public function showAdmin(): void
-    {
-        // On vérifie que l'utilisateur est connecté.
-        $this->checkIfUserIsConnected();
-
-        // On récupère les articles.
+    public function showAdmin():void{
         $articleManager = new ArticleManager();
         $articles = $articleManager->getAllArticles();
 
-        // On affiche la page d'administration.
-        $view = new View("Administration");
+        $view = new View("Page Admin");
         $view->render("admin", [
-            'articles' => $articles
+            'articles' => $articles,
         ]);
+        
     }
-
     /**
      * Affiche la page d'administration (tableau de bord).
      * @return void
      */
-
     public function showDashboard(): void
     {
         // 1) Sécurité : on s'assure que l'utilisateur est connecté
@@ -103,17 +95,11 @@ class AdminController
         $commentManager = new CommentManager();
         $articles = $articleManager->getAllArticles();
 
-        $commentsByArticle = [];
-
-
         // 3) Hydratation du nombre de commentaires pour chaque article
-        //(POO : aucune logique dans la vue)
         foreach ($articles as $article) {
             // Article a bien un getId()
             $count = $commentManager->countByArticleId($article->getId());
-
             $article->setCountComments($count);
-
         }
 
         // 4) Rendu de la vue (affichage pur)
@@ -122,17 +108,17 @@ class AdminController
             'articles' => $articles,
         ]);
     }
-    
+
     public function showComments(): void
     {
         // 1) Sécurité
         $this->checkIfUserIsConnected();
 
         // 2) Récupération de l'id article depuis la requête
-        $articleId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+        $articleId = utils::request('id');
         if ($articleId <= 0) {
             // Id manquant ou invalide -> redirection ou message propre
-           
+
             throw new \InvalidArgumentException("Identifiant d'article invalide.");
         }
 
@@ -149,11 +135,11 @@ class AdminController
         // 5) Charger uniquement les commentaires de CET article
         $comments = $commentManager->findByArticleId($articleId);
 
-        // (Optionnel) hydrater dans l'entité si tu as setComments()
+        // (Optionnel) hydrater dans l'entité : setComments()
         if (method_exists($article, 'setComments')) {
             $article->setComments($comments);
         }
-        // (Optionnel) hydrater le count si tu l’affiches dans la vue
+        // (Optionnel) hydrater le count affiché dans la vue
         if (method_exists($article, 'setCountComments')) {
             $article->setCountComments($commentManager->countByArticleId($articleId));
         }
@@ -161,12 +147,10 @@ class AdminController
         // 6) Rendu : on passe l'article ciblé et ses commentaires
         $view = new View("Commentaires de l'article");
         $view->render("comments", [
-            'article'  => $article,
+            'article' => $article,
             'comments' => $comments,
         ]);
     }
-
-
 
     /**
      * Vérifie que l'utilisateur est connecté.
@@ -223,7 +207,7 @@ class AdminController
         $_SESSION['idUser'] = $user->getId();
 
         // On redirige vers la page d'administration.
-        Utils::redirect("admin");
+        Utils::redirect("dashboard");
     }
 
     /**
@@ -325,29 +309,22 @@ class AdminController
      * @return void
      */
     public function deleteComment(): void
-{
-    $this->checkIfUserIsConnected();
+    {
+        $this->checkIfUserIsConnected();
 
-    $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
-    if ($id <= 0) {
-        // TODO: flash message "ID invalide"
-        header('Location: index.php?action=showcomments');
+        $id = Utils::request("id", -1);
+        if ($id <= 0) {
+            Utils::redirect("dashboard");
+            exit;
+        }
+
+        $commentManager = new CommentManager();
+        $comment = $commentManager->getCommentById($id);
+        $commentSupp = $commentManager->deleteComment($comment);
+        
+        $articleId = (int) $comment->getIdArticle();
+        
+        Utils::redirect("showComments",['id'=>(int)$articleId]);
         exit;
     }
-
-    $commentManager = new CommentManager();
-    $comment = $commentManager->getCommentById($id);
-
-    if ($comment === null) {
-        // TODO: flash message "Commentaire introuvable"
-        header('Location: index.php?action=showComments');
-        exit;
-    }
-
-    $ok = $commentManager->deleteComment($comment);
-
-    // TODO: flash message ($ok ? "Suppression réussie" : "Échec suppression")
-    header('Location: index.php?action=showcomments');
-    exit;
-}
 }

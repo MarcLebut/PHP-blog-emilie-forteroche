@@ -2,11 +2,14 @@
 $currentSort = $_GET['sort'] ?? 'date';
 $currentOrder = $_GET['order'] ?? 'desc';
 
+/* 
+cette petite closure sert de helper pour injecter la classe CSS active quand l’item correspond au tri courant — propre, lisible et réutilisable 
+*/
 $active = function (string $col, string $order) use ($currentSort, $currentOrder): string {
     return ($currentSort === $col && $currentOrder === $order) ? 'active' : '';
 };
 ?>
-<h2>Tableau de bord</h2></br><a class="submit" href="index.php?action=admin">Gérer les articles</a></br>
+
 <div class="adminArticle">
     <div class="articleLine" style="font-weight:600;">
         <div class="title">
@@ -33,8 +36,11 @@ $active = function (string $col, string $order) use ($currentSort, $currentOrder
             <a class="sort-btn <?= $active('date', 'desc') ?>" href="index.php?action=dashboard&sort=date&order=desc" title="Trier Date décroissant">▼</a>
         </div>
     </div>
+    
     <?php foreach ($articles as $article) { ?>
+        
         <div class="articleLine">
+            
             <div class="title"><?= htmlspecialchars($article->getTitle(), ENT_QUOTES, 'UTF-8') ?></div>
             <div class="title"><?= (int) $article->getCountViews() ?></div>
             <div class="title">
@@ -50,4 +56,10 @@ $active = function (string $col, string $order) use ($currentSort, $currentOrder
         </div>
     <?php } ?>
 </div>
+<div class="listBtn">
+    
+    <a class="submit" href="index.php?action=admin">Gestion des articles</a>
+
+</div>
+    
 

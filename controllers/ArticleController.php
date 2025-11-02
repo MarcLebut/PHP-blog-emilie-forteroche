@@ -17,12 +17,12 @@ class ArticleController
 
     public function showArticle()
     {
-        $id = (int) $_GET['id'];
+        $id = utils::request('id');
 
         $articleManager = new ArticleManager();
         $article = $articleManager->getArticleById($id);
 
-        // 🆕 Incrémenter le compteur de vues ici
+        // le compteur de vues 
         $articleManager->incrementViews($id);
 
         $commentManager = new CommentManager();

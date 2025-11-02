@@ -87,4 +87,16 @@ class Utils {
         return $_REQUEST[$variableName] ?? $defaultValue;
     }
 
+    /**
+     * Cette méthode permet de récupérer une variable de la superglobale $_GET.
+     * Si cette variable n'est pas définie, on retourne la valeur null (par défaut)
+     * ou celle qui est passée en paramètre si elle existe.
+     * @param string $variableName : le nom de la variable à récupérer.
+     * @param mixed $defaultValue : la valeur par défaut si la variable n'est pas définie.
+     * @return mixed : la valeur de la variable ou la valeur par défaut.
+     */
+    public static function get(string $variableName, mixed $defaultValue = null) : mixed
+    {
+        return $_GET[$variableName] ?? $defaultValue;
+    }
 }

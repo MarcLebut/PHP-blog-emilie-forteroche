@@ -327,8 +327,8 @@ a.info {
     font-weight: bold;
     min-width: 220px;
     width: 220px;
-    
-    
+    display: flex;
+    justify-content: center; 
     
 }
 .centercontent{
@@ -375,4 +375,18 @@ footer {
 .sort-btn.active{
     background: var(--backgroundColor);
     color: var(--commentColor);
+}
+.adminArticle .articleLine:nth-child(odd)  { 
+    background: var(--commentPaleColor); 
+} /* lignes impairs */
+.adminArticle .articleLine:nth-child(even) { 
+    background: var(--headerPaleColor); 
+    color: black; 
+} /* lignes paires */
+.adminArticle .articleLine:hover { 
+    background: var(--commentColor); 
+    color: white; 
+} 
+.adminArticle .articleLine span:hover {
+    color: white;
 }
