@@ -23,6 +23,19 @@ class CommentManager extends AbstractEntityManager
     }
 
     /**
+     * Compte les commentaires d'un article.
+     * @param int $articleId
+     * @return int
+     */
+    public function countByArticleId(int $articleId): int
+    {
+        // version harmonisée avec le reste de la classe :
+        $sql = 'SELECT COUNT(*) FROM comment WHERE id_article = :id';
+        $result = $this->db->query($sql, ['id' => $articleId]);
+        return (int) $result->fetchColumn();
+    }
+
+    /**
      * Récupère un commentaire par son id.
      * @param int $id : l'id du commentaire.
      * @return Comment|null : un objet Comment ou null si le commentaire n'existe pas.
@@ -66,4 +79,31 @@ class CommentManager extends AbstractEntityManager
         return $result->rowCount() > 0;
     }
 
+    /**
+     * Récupère tous les commentaires liés à un article.
+     *
+     * @param int $articleId ID de l'article.
+     * @return Comment[] Tableau d'objets Comment (peut être vide).
+     */
+    public function findByArticleId(int $articleId): array
+{
+    $sql = "SELECT id, id_article, pseudo, content, date_creation
+            FROM comment
+            WHERE id_article = :id
+            ORDER BY id ASC";
+
+    $result = $this->db->query($sql, ['id' => $articleId]);
+
+    $comments = [];
+    while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
+        $comment = new Comment();
+        $comment->setId((int)$row['id']);
+        $comment->setidArticle((int)$row['id_article']);
+        $comment->setPseudo((string)($row['pseudo'] ?? ''));
+        $comment->setContent((string)($row['content'] ?? ''));
+        $comment->setDateCreation($row['date_creation'] ?? null);
+        $comments[] = $comment;
+    }
+    return $comments;
+    }
 }

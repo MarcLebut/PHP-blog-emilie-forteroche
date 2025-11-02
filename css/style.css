@@ -315,6 +315,7 @@ a.info {
 
 .articleLine {
     display: flex; 
+    text-align: center;
 }
 
 .articleLine div {
@@ -324,17 +325,25 @@ a.info {
 
 .articleLine .title {
     font-weight: bold;
-    min-width: 200px;
-    width: 200px;
+    min-width: 220px;
+    width: 220px;
+    display: flex;
+    justify-content: center; 
+    
+}
+.centercontent{
+    justify-content: center;
 }
 
 .articleLine .content {
     flex-grow: 1;
+    
 }
 
 .articleLine > div {
     padding: 20px;
     border: 1px solid var(--backgroundColor);
+    
 }
 
 /** 
@@ -349,4 +358,35 @@ footer {
     padding: 20px;
     color: white;
     background-color: var(--headerColor);
+}
+
+/* Mini styles pour rendre les flèches visibles et alignées */
+.sort-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    margin-left:6px;
+    padding:2px 6px;
+    border:1px solid var(--backgroundColor);
+    border-radius:4px;
+    font-weight:700;
+    line-height:1;
+}
+.sort-btn.active{
+    background: var(--backgroundColor);
+    color: var(--commentColor);
+}
+.adminArticle .articleLine:nth-child(odd)  { 
+    background: var(--commentPaleColor); 
+} /* lignes impairs */
+.adminArticle .articleLine:nth-child(even) { 
+    background: var(--headerPaleColor); 
+    color: black; 
+} /* lignes paires */
+.adminArticle .articleLine:hover { 
+    background: var(--commentColor); 
+    color: white; 
+} 
+.adminArticle .articleLine span:hover {
+    color: white;
 }

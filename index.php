@@ -1,6 +1,6 @@
 <?php
 
-require_once 'config/config.php';
+require_once 'config/_config.php';
 require_once 'config/autoload.php';
 
 // On récupère l'action demandée par l'utilisateur.
@@ -73,9 +73,22 @@ try {
             $adminController = new AdminController();
             $adminController->deleteArticle();
             break;
+        case 'deleteComment':
+            $adminController = new AdminController();
+            $adminController->deleteComment();
+            break;
+        case 'dashboard':
+            $adminController = new AdminController();
+            $adminController->index();
+            break;
+        
+        case 'showComments':
+            $adminController = new AdminController();
+            $adminController->showComments();
+            break;
 
         default:
-            throw new Exception("La page demandée n'existe pas.");
+        throw new Exception("La page demandée n'existe pas.");
     }
 } catch (Exception $e) {
     // En cas d'erreur, on affiche la page d'erreur.
