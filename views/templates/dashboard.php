@@ -24,7 +24,7 @@ $active = function (string $col, string $order) use ($currentSort, $currentOrder
             <a class="sort-btn <?= $active('views', 'desc') ?>" href="index.php?action=dashboard&sort=views&order=desc" title="Trier Vues décroissant">▼</a>
         </div>
 
-        <div class="title centercontent">
+        <div class="title">
             <h3>Commentaire</h3>
             <a class="sort-btn <?= $active('comments', 'asc') ?>" href="index.php?action=dashboard&sort=comments&order=asc" title="Trier Commentaires croissant">▲</a>
             <a class="sort-btn <?= $active('comments', 'desc') ?>" href="index.php?action=dashboard&sort=comments&order=desc" title="Trier Commentaires décroissant">▼</a>
@@ -50,16 +50,14 @@ $active = function (string $col, string $order) use ($currentSort, $currentOrder
                     <?= (int) $article->getCountComments() ?>
                 </a>
             </div>
-            <div class="content footer">
+            <div class="title content footer">
                 <span class="info"><?= ucfirst(Utils::convertDateToFrenchFormat($article->getDateCreation())) ?></span>
             </div>
         </div>
     <?php } ?>
 </div>
-<div class="listBtn">
-    
+<div class="">
     <a class="submit" href="index.php?action=admin">Gestion des articles</a>
-
 </div>
     
 

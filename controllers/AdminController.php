@@ -79,8 +79,8 @@ class AdminController
         $view->render("admin", [
             'articles' => $articles,
         ]);
-        
     }
+
     /**
      * Affiche la page d'administration (tableau de bord).
      * @return void
@@ -284,7 +284,6 @@ class AdminController
         // On redirige vers la page d'administration.
         Utils::redirect("admin");
     }
-
 
     /**
      * Suppression d'un article.
